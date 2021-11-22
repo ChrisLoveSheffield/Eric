@@ -1,0 +1,88 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Excel批量處理</title>
+    <script src="https://cdn.bootcss.com/jquery/3.2.1/jquery.js"></script>
+    <script src="https://cdn.bootcss.com/xlsx/0.11.5/xlsx.core.min.js"></script>
+</head>
+<body>
+<style>
+    #text{
+        width:500px;
+        height:1000px;
+    }
+</style>
+<input type="file" id="excel-file">
+
+<div>
+   <textarea  id='text'>
+   </textarea>
+</div>
+<script>
+    //給input標籤繫結change事件，一上傳選中的.xls檔案就會觸發該函式
+    $('#excel-file').change(function(e) {
+        var files = e.target.files;
+        var fileReader = new FileReader();
+        fileReader.onload = function(ev) {
+            try {
+                var data = ev.target.result
+                var workbook = XLSX.read(data, {
+                    type: 'binary'
+                }) // 以二進位制流方式讀取得到整份excel表格物件
+                var persons = []; // 儲存獲取到的資料
+            } catch (e) {
+                console.log('檔案型別不正確');
+                return;
+            }
+            // 表格的表格範圍，可用於判斷表頭是否數量是否正確
+            var fromTo = '';
+            // 遍歷每張表讀取
+            for (var sheet in workbook.Sheets) {
+                if (workbook.Sheets.hasOwnProperty(sheet)) {
+                    fromTo = workbook.Sheets[sheet]['!ref'];
+                    //console.log(fromTo);
+                    persons = persons.concat(XLSX.utils.sheet_to_json(workbook.Sheets[sheet]));
+                    //console.log(JSON.stringify(persons))
+                    break; // 如果只取第一張表，就取消註釋這行
+                    
+                }
+            }
+            //在控制檯打印出來表格中的資料
+            // function createLookMap(field) {
+            //     var map = {};//建立一個空的json物件
+            //     for (var i = 0; i < jsonArr.length; i  ) {
+            //     var value = jsonArr[i];//將陣列中的元素作為json物件的值
+            //     var key = value[field];//選取一個屬性作為新的json物件的key
+            //     map[key] = value;
+            //     }
+            //     return map;
+            // }  
+            
+            persons[0]['管片类型']= persons[0]['管片类型及封顶块位置'].split(" ")[0]
+            persons[0]['管片拼装点位']= persons[0]['管片类型及封顶块位置'].split(" ")[1]
+            var str="韦双区间{$隧道}隧道{$环号}环施工参数： &#13;"
+                    +"1.掘进推力{$总推力(kN)}KN,刀盘转速{$刀盘转速(rpm)}r/min，刀盘扭矩{$刀盘扭矩(kN·m)}KN•m，掘进速度{$掘进速度(mm/min)}mm/min,土仓顶部土压{$上部土仓压力(bar)}bar &#13;"
+                    +"2.掘进时间 &#13;"
+                    +"拼装时间{$管片安装时间}&#13;"
+                    +"3.掘进前水平姿态：前/后{$掘进前轴线偏差(mm)-水平(前点/后点)}；垂直姿态：前/后-{$掘进前轴线偏差(mm)-竖直(前点/后点)}；掘进后水平姿态：前/后9/11，垂直姿态：前/后-47/-47 &#13;"
+                    +"4.管片拼装点位：{$管片拼装点位} &#13;"
+                    +"5.管片类型：{$管片类型} &#13;"
+                    +"6.同步注浆量： &#13;"
+                    +"7.地质情况：泥岩 &#13;"
+                    +"8.出渣量：{$实际出渣量(m3)}方 &#13;"
+                    +"9.212环二次注浆，双液，1点4包水泥 &#13;";
+            $.each(persons[0], function(key, value){
+                if(str.indexOf("{$"+key+"}")>=0){
+                    str = str.replace("{$"+key+"}",value)
+                }
+            });
+            $("#text").html(str)
+        };
+        
+        // 以二進位制方式開啟檔案
+        fileReader.readAsBinaryString(files[0]);
+    });
+    
+</script>
+</body>
+</html>
